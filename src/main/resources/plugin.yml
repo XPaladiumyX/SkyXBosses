@@ -6,3 +6,7 @@ prefix: SkyXCore-Logger
 authors: [ XPaladiumyX ]
 description: Made with love and determination
 website: skyxnetwork.net
+commands:
+  spawnboss:
+    description: Spawns the Tempest Warden boss
+    usage: /spawnboss

@@ -1,0 +1,44 @@
+# Does this boss should be enabled?
+isEnabled: true
+# The entity type of the boss
+entityType: BREEZE
+# The display name of the Boss
+name: '&e&lTempest Warden'
+# The health of the boss
+health: 3.0
+# How much damages does the boss
+damage: 2.0
+# Enable/Disable Bossbar boss name + health display
+IsBossbarEnabled: true
+# Does the mob stay spawned even if it doesn't die?
+isPersistent: true
+# Movement speed of the boss
+movementSpeedAttribute: 0.35
+# What special attacks does the boss? Any special attacks can be created in the Powers folder.
+powers:
+  - LIGHTNING
+  - GROUND_POUND
+  - FIREBALL
+  - EXPLOSION
+  - SUMMON_MINIONS
+# What is the spawn location of the boss?
+spawnLocations:
+  - world,0,100,0
+# What is the spawn cooldown of the boss (in seconds)
+spawnCooldown: 1800
+# What is the maximum follow distance of the boss?
+followDistance: 100
+# The message when the boss spawns
+spawnMessage: '&6⚡ A Tempest Warden has appeared nearby!'
+# The message when the boss dies
+deathMessages:
+  - '&e&l---------------------------------------------'
+  - '&4The &e&lTempest Warden &4has been put down!'
+  - '&c&l    1st Damager: $damager1name &cwith $damager1damage damage!'
+  - '&6&l    2nd Damager: $damager2name &6with $damager2damage damage!'
+  - '&e&l    3rd Damager: $damager3name &ewith $damager3damage damage!'
+  - '&aSlayers: $players'
+  - '&e&l---------------------------------------------'
+# Commands to execute when the boss is killed
+onDeathCommands:
+  - 'give {player} minecraft:diamond 3'
