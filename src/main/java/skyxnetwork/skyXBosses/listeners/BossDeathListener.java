@@ -15,12 +15,14 @@ public class BossDeathListener implements Listener {
     public void onBossDeath(EntityDeathEvent e) {
         if (!(e.getEntity() instanceof LivingEntity boss)) return;
 
-        BossData data = SkyXBosses.getInstance().getBossManager().getBoss(boss.getCustomName());
+        BossData data = SkyXBosses.getInstance().getBossManager().getBossFromEntity(boss);
         if (data == null) return;
 
         // Death messages
         for (String msg : data.getDeathMessages()) {
-            Bukkit.getOnlinePlayers().forEach(p -> p.sendMessage(ChatColor.translateAlternateColorCodes('&', msg)));
+            Bukkit.getOnlinePlayers().forEach(p ->
+                    p.sendMessage(ChatColor.translateAlternateColorCodes('&', msg))
+            );
         }
 
         // On-death commands
@@ -29,4 +31,3 @@ public class BossDeathListener implements Listener {
         }
     }
 }
-
