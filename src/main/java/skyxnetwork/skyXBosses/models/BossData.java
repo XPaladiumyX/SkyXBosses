@@ -117,8 +117,8 @@ public class BossData {
         // BossBar
         if (bossbarEnabled) {
             BossBar bar = Bukkit.createBossBar(name, BarColor.RED, BarStyle.SOLID);
-            Bukkit.getOnlinePlayers().forEach(bar::addPlayer);
 
+            // Tâche qui vérifie tous les 20 ticks (1 seconde)
             new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -127,9 +127,21 @@ public class BossData {
                         cancel();
                         return;
                     }
+
+                    // Actualiser la progress
                     bar.setProgress(entity.getHealth() / entity.getMaxHealth());
+
+                    // Ajouter/retirer les joueurs selon leur distance
+                    Bukkit.getOnlinePlayers().forEach(player -> {
+                        if (player.getWorld().equals(entity.getWorld()) &&
+                                player.getLocation().distanceSquared(entity.getLocation()) <= 50 * 50) {
+                            if (!bar.getPlayers().contains(player)) bar.addPlayer(player);
+                        } else {
+                            if (bar.getPlayers().contains(player)) bar.removePlayer(player);
+                        }
+                    });
                 }
-            }.runTaskTimer(SkyXBosses.getInstance(), 0, 20);
+            }.runTaskTimer(SkyXBosses.getInstance(), 0, 20); // 20 ticks = 1 seconde
         }
 
         // Spawn message
