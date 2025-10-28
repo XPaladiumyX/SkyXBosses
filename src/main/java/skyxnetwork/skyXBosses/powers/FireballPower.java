@@ -32,15 +32,13 @@ public class FireballPower extends AbstractPower implements Listener {
     @Override
     public void execute() {
         List<Player> nearbyPlayers = boss.getNearbyEntities(data.getRadius(), data.getRadius(), data.getRadius())
-                .stream()
-                .filter(e -> e instanceof Player p && p.getGameMode() != org.bukkit.GameMode.CREATIVE)
-                .map(e -> (Player) e)
-                .toList();
+                .stream().filter(e -> e instanceof Player).map(e -> (Player) e).toList();
 
         if (nearbyPlayers.isEmpty()) return;
 
         int fireballCount = 1 + random.nextInt(2);
         for (int i = 0; i < fireballCount; i++) {
+
             Player target = nearbyPlayers.get(random.nextInt(nearbyPlayers.size()));
 
             double offsetX = (random.nextDouble() - 0.5) * 2;
@@ -59,12 +57,20 @@ public class FireballPower extends AbstractPower implements Listener {
 
             activeFireballs.add(fb.getUniqueId());
 
+            // Suivi de la fireball
             new BukkitRunnable() {
                 final Set<UUID> alreadyHit = new HashSet<>();
 
                 @Override
                 public void run() {
                     if (!fb.isValid() || target.isDead() || !activeFireballs.contains(fb.getUniqueId())) {
+                        activeFireballs.remove(fb.getUniqueId());
+                        cancel();
+                        return;
+                    }
+
+                    // Stop suivi si la fireball a été renvoyée
+                    if (!(fb.getShooter() instanceof LivingEntity l && l.getUniqueId().equals(bossId))) {
                         activeFireballs.remove(fb.getUniqueId());
                         cancel();
                         return;
@@ -83,12 +89,19 @@ public class FireballPower extends AbstractPower implements Listener {
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent e) {
         if (!stunnedPlayers.contains(e.getPlayer().getUniqueId())) return;
+
         Location from = e.getFrom();
         Location to = e.getTo();
         if (to == null) return;
-        e.getPlayer().teleport(new Location(e.getPlayer().getWorld(), from.getX(), to.getY(), from.getZ(), to.getYaw(), to.getPitch()));
+
+        e.getPlayer().teleport(new Location(
+                e.getPlayer().getWorld(),
+                from.getX(), to.getY(), from.getZ(),
+                to.getYaw(), to.getPitch()
+        ));
     }
 
+    // STOP fireball follow si le joueur la frappe
     @EventHandler
     public void onFireballHitByPlayer(EntityDamageByEntityEvent e) {
         if (!(e.getEntity() instanceof Fireball fb)) return;
@@ -96,14 +109,38 @@ public class FireballPower extends AbstractPower implements Listener {
         if (!activeFireballs.contains(fb.getUniqueId())) return;
 
         activeFireballs.remove(fb.getUniqueId());
+        // On ne met plus de velocity, la fireball se comporte comme normale
     }
 
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent e) {
         if (!(e.getEntity() instanceof Fireball fb)) return;
-        if (!activeFireballs.contains(fb.getUniqueId())) return;
 
+        if (!activeFireballs.contains(fb.getUniqueId())) return;
         activeFireballs.remove(fb.getUniqueId());
+
+        if (fb.getShooter() == null || !(fb.getShooter() instanceof LivingEntity bossShooter)) return;
+        if (!bossShooter.getUniqueId().equals(bossId)) return;
+
+        fb.getNearbyEntities(1.5, 1.5, 1.5).forEach(ent -> {
+            if (ent instanceof Player player && !stunnedPlayers.contains(player.getUniqueId())) {
+                stunnedPlayers.add(player.getUniqueId());
+                player.sendMessage("§cYou have been stunned for 4 seconds!");
+
+                new BukkitRunnable() {
+                    int ticks = 0;
+
+                    @Override
+                    public void run() {
+                        if (ticks++ >= 80 || player.isDead()) {
+                            stunnedPlayers.remove(player.getUniqueId());
+                            cancel();
+                        }
+                    }
+                }.runTaskTimer(plugin, 0L, 1L);
+            }
+        });
+
         fb.getWorld().createExplosion(fb.getLocation(), 0f, false, false, null);
         fb.remove();
     }

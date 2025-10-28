@@ -19,6 +19,7 @@ public class SummonMinionsPower extends AbstractPower implements Listener {
 
     public SummonMinionsPower(JavaPlugin plugin, LivingEntity boss, PowerData data) {
         super(plugin, boss, data);
+
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -28,14 +29,20 @@ public class SummonMinionsPower extends AbstractPower implements Listener {
         base.getWorld().spawnParticle(data.getParticle(), base, 50, 1, 1, 1, 0.1);
         base.getWorld().playSound(base, data.getSound(), 1f, 1f);
 
-        EntityType type = (data.getMinionType() == null || data.getMinionType().isEmpty())
-                ? boss.getType()
-                : EntityType.valueOf(data.getMinionType().toUpperCase());
+        // Calcul du type du minion
+        EntityType type;
+        if (data.getMinionType() == null || data.getMinionType().isEmpty()) {
+            type = boss.getType(); // même type que le boss
+        } else {
+            type = EntityType.valueOf(data.getMinionType().toUpperCase());
+        }
 
+        // Vérifier combien de minions sont déjà spawn
         long currentMinions = base.getWorld().getEntitiesByClass(Mob.class).stream()
                 .filter(m -> m.getScoreboardTags().contains("BOSS_MINION"))
                 .count();
-        if (currentMinions >= MAX_MINIONS) return;
+
+        if (currentMinions >= MAX_MINIONS) return; // ne pas spawn si déjà max
 
         for (int i = 0; i < data.getMinionCount(); i++) {
             if (currentMinions + i >= MAX_MINIONS) break;
@@ -51,7 +58,10 @@ public class SummonMinionsPower extends AbstractPower implements Listener {
                 mob.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(data.getMinionDamage());
                 mob.addScoreboardTag("BOSS_MINION");
 
-                for (String tag : boss.getScoreboardTags()) mob.addScoreboardTag(tag);
+                // Copier les tags du boss
+                for (String tag : boss.getScoreboardTags()) {
+                    mob.addScoreboardTag(tag);
+                }
             }
         }
     }
@@ -60,6 +70,9 @@ public class SummonMinionsPower extends AbstractPower implements Listener {
     public void onEntityTarget(EntityTargetEvent e) {
         if (!(e.getEntity() instanceof LivingEntity attacker)) return;
         if (!(e.getTarget() instanceof LivingEntity target)) return;
-        if (!BossUtils.canDamage(attacker, target)) e.setCancelled(true);
+
+        if (!BossUtils.canDamage(attacker, target)) {
+            e.setCancelled(true);
+        }
     }
 }
