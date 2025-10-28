@@ -2,6 +2,7 @@ package skyxnetwork.skyXBosses;
 
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.java.JavaPlugin;
+import skyxnetwork.skyXBosses.listeners.BossDamageListener;
 import skyxnetwork.skyXBosses.listeners.BossDeathListener;
 import skyxnetwork.skyXBosses.managers.BossManager;
 import skyxnetwork.skyXBosses.managers.PowerManager;
@@ -23,7 +24,11 @@ public class SkyXBosses extends JavaPlugin {
         powerManager = new PowerManager(this);
         bossManager = new BossManager(this);
 
-        getLogger().info("SkyXBosses has been enabled successfully!");
+        getLogger().info("✅ SkyXBosses enabled successfully!");
+
+        // Enregistrement des listeners
+        getServer().getPluginManager().registerEvents(new BossDamageListener(), this);
+        getServer().getPluginManager().registerEvents(new BossDeathListener(), this);
 
         // /spawnboss command
         this.getCommand("spawnboss").setExecutor((sender, command, label, args) -> {
@@ -61,9 +66,8 @@ public class SkyXBosses extends JavaPlugin {
             return List.of();
         });
 
-        getCommand("skyxbosses").setExecutor(new SkyXBossesCommand(this));
-        getServer().getPluginManager().registerEvents(new BossDeathListener(), this);
-
+        // /skyxbosses
+        getCommand("skyxbosses").setExecutor(new skyxnetwork.skyXBosses.SkyXBossesCommand(this));
     }
 
     @Override
