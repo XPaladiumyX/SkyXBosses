@@ -15,10 +15,11 @@ import skyxnetwork.skyXBosses.utils.BossUtils;
 
 public class SummonMinionsPower extends AbstractPower implements Listener {
 
+    private static final int MAX_MINIONS = 12;
+
     public SummonMinionsPower(JavaPlugin plugin, LivingEntity boss, PowerData data) {
         super(plugin, boss, data);
 
-        // On enregistre le listener pour bloquer les cibles interdites
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -28,8 +29,24 @@ public class SummonMinionsPower extends AbstractPower implements Listener {
         base.getWorld().spawnParticle(data.getParticle(), base, 50, 1, 1, 1, 0.1);
         base.getWorld().playSound(base, data.getSound(), 1f, 1f);
 
-        EntityType type = EntityType.valueOf(data.getMinionType().toUpperCase());
+        // Calcul du type du minion
+        EntityType type;
+        if (data.getMinionType() == null || data.getMinionType().isEmpty()) {
+            type = boss.getType(); // même type que le boss
+        } else {
+            type = EntityType.valueOf(data.getMinionType().toUpperCase());
+        }
+
+        // Vérifier combien de minions sont déjà spawn
+        long currentMinions = base.getWorld().getEntitiesByClass(Mob.class).stream()
+                .filter(m -> m.getScoreboardTags().contains("BOSS_MINION"))
+                .count();
+
+        if (currentMinions >= MAX_MINIONS) return; // ne pas spawn si déjà max
+
         for (int i = 0; i < data.getMinionCount(); i++) {
+            if (currentMinions + i >= MAX_MINIONS) break;
+
             Location spawnLoc = base.clone().add((Math.random() - 0.5) * 5, 0, (Math.random() - 0.5) * 5);
             var entity = base.getWorld().spawnEntity(spawnLoc, type);
 
@@ -41,7 +58,7 @@ public class SummonMinionsPower extends AbstractPower implements Listener {
                 mob.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(data.getMinionDamage());
                 mob.addScoreboardTag("BOSS_MINION");
 
-                // Ajouter le tag du boss pour le repérer facilement
+                // Copier les tags du boss
                 for (String tag : boss.getScoreboardTags()) {
                     mob.addScoreboardTag(tag);
                 }
@@ -49,7 +66,6 @@ public class SummonMinionsPower extends AbstractPower implements Listener {
         }
     }
 
-    // Listener pour empêcher les minions ou bosses de cibler leurs propres alliés
     @EventHandler
     public void onEntityTarget(EntityTargetEvent e) {
         if (!(e.getEntity() instanceof LivingEntity attacker)) return;

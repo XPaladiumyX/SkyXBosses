@@ -1,5 +1,6 @@
 package skyxnetwork.skyXBosses.managers;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -15,6 +16,7 @@ public class PowerExecutor {
     private final SkyXBosses plugin;
     private final PowerManager powerManager;
     private final Map<UUID, BukkitTask> activeTasks = new HashMap<>();
+    private final Map<UUID, Set<Integer>> bossHealthMilestones = new HashMap<>();
 
     public PowerExecutor(SkyXBosses plugin, PowerManager powerManager) {
         this.plugin = plugin;
@@ -58,18 +60,29 @@ public class PowerExecutor {
                 AbstractPower power = createPower(chosen, boss);
                 if (power != null) power.execute();
 
-                // Planifier la prochaine attaque après un délai basé sur la vie
+                // Calculer le pourcentage de vie du boss
                 double healthPercent = boss.getHealth() / boss.getMaxHealth();
+
+                // Envoyer un message global si un palier est atteint
+                int[] milestones = {75, 50, 25, 10};
+                Set<Integer> triggered = bossHealthMilestones.computeIfAbsent(boss.getUniqueId(), k -> new HashSet<>());
+                for (int milestone : milestones) {
+                    if (healthPercent * 100 <= milestone && !triggered.contains(milestone)) {
+                        triggered.add(milestone);
+                        Bukkit.broadcastMessage("§cThe boss " + boss.getName() + " has reached " + milestone + "% of its life! It will now attack faster!");
+                    }
+                }
+
+                // Planifier la prochaine attaque après un délai basé sur la vie
                 long baseDelay = 100L; // 5 sec
                 long minDelay = 20L;   // 1 sec
                 long delay = (long) (minDelay + (baseDelay - minDelay) * healthPercent);
 
-                // Planifier la prochaine exécution correctement
                 scheduleNextAttackWithDelay(boss, powers, delay);
             }
         };
 
-        BukkitTask task = runnable.runTask(plugin); // exécution immédiate de la première attaque
+        BukkitTask task = runnable.runTask(plugin); // première attaque immédiate
         activeTasks.put(boss.getUniqueId(), task);
     }
 
@@ -82,7 +95,7 @@ public class PowerExecutor {
         BukkitRunnable runnable = new BukkitRunnable() {
             @Override
             public void run() {
-                scheduleNextAttack(boss, powers); // maintenant on rappelle la méthode après un vrai délai
+                scheduleNextAttack(boss, powers);
             }
         };
 
@@ -93,6 +106,7 @@ public class PowerExecutor {
     public void stopForBoss(LivingEntity boss) {
         BukkitTask task = activeTasks.remove(boss.getUniqueId());
         if (task != null) task.cancel();
+        bossHealthMilestones.remove(boss.getUniqueId());
     }
 
     private AbstractPower createPower(PowerData data, LivingEntity boss) {
