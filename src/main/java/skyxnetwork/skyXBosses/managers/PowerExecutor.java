@@ -35,34 +35,40 @@ public class PowerExecutor {
 
         if (powers.isEmpty()) return;
 
-        // Tâche récursive pour ajuster la vitesse d'attaque selon la vie
-        BukkitRunnable runnable = new BukkitRunnable() {
+        // Démarrer la première exécution
+        scheduleNextAttack(boss, powers);
+    }
+
+    private void scheduleNextAttack(LivingEntity boss, List<PowerData> powers) {
+        if (boss.isDead() || !boss.isValid()) {
+            stopForBoss(boss);
+            return;
+        }
+
+        BukkitTask task = new BukkitRunnable() {
             @Override
             public void run() {
                 if (boss.isDead() || !boss.isValid()) {
                     stopForBoss(boss);
-                    cancel();
                     return;
                 }
 
-                // Sélection aléatoire d'un pouvoir
+                // Choisir et exécuter un pouvoir aléatoire
                 PowerData chosen = powers.get(new Random().nextInt(powers.size()));
                 AbstractPower power = createPower(chosen, boss);
-
                 if (power != null) power.execute();
 
-                // Replanifier selon la vie actuelle
-                double healthPercent = boss.getHealth() / boss.getMaxHealth(); // 1.0 = full hp
+                // Planifier la prochaine attaque selon la vie
+                double healthPercent = boss.getHealth() / boss.getMaxHealth();
                 long baseDelay = 100L; // 5 sec
                 long minDelay = 20L;   // 1 sec
                 long delay = (long) (minDelay + (baseDelay - minDelay) * healthPercent);
 
-                this.runTaskLater(plugin, delay);
+                scheduleNextAttack(boss, powers); // récursion propre
             }
-        };
+        }.runTask(plugin); // planifie la tâche immédiate
 
-        runnable.runTask(plugin);
-        activeTasks.put(boss.getUniqueId(), (BukkitTask) runnable);
+        activeTasks.put(boss.getUniqueId(), task);
     }
 
     public void stopForBoss(LivingEntity boss) {
