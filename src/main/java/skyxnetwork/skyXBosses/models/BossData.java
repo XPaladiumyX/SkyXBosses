@@ -68,6 +68,10 @@ public class BossData {
         return powers;
     }
 
+    public String getId() {
+        return id;
+    }
+
     // Spawn simple au premier emplacement configuré
     public LivingEntity spawn() {
         if (spawnLocations.isEmpty()) return null;
@@ -92,36 +96,23 @@ public class BossData {
         entity.setHealth(health);
         entity.setPersistent(persistent);
         entity.setGlowing(true);
-        entity.addScoreboardTag(name.replaceAll("§", ""));
+
+        // Utiliser l'ID du boss comme tag
+        entity.addScoreboardTag(id);
 
         try {
             entity.getClass().getMethod("setScale", float.class).invoke(entity, (float) scale);
         } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException ignored) {
-            // Si la version de Minecraft ne supporte pas setScale (anciennes versions)
         }
 
         // Follow distance pour l'IA
         try {
-            if (entity instanceof org.bukkit.entity.LivingEntity le) {
-                org.bukkit.attribute.Attribute followAttr = null;
-                try {
-                    // Tentative d'accès direct à l'attribut (1.21+)
-                    followAttr = Attribute.FOLLOW_RANGE;
-                } catch (NoSuchFieldError ignored) {
-                    // Si l'attribut n'existe pas, on peut l'ignorer (anciennes versions)
-                }
-
-                if (followAttr != null) {
-                    var attrInstance = le.getAttribute(followAttr);
-                    if (attrInstance != null) {
-                        attrInstance.setBaseValue(followDistance);
-                    }
-                }
+            if (entity instanceof LivingEntity le) {
+                var attrInstance = le.getAttribute(Attribute.FOLLOW_RANGE);
+                if (attrInstance != null) attrInstance.setBaseValue(followDistance);
             }
         } catch (Exception ignored) {
-            // ignore si non supporté
         }
-
 
         // BossBar
         if (bossbarEnabled) {
@@ -146,9 +137,7 @@ public class BossData {
             Bukkit.getOnlinePlayers().forEach(p -> p.sendMessage(spawnMessage));
         }
 
-        // Logger
         SkyXBosses.getInstance().getLogger().info("Spawned boss " + name + " at " + loc);
-
         return entity;
     }
 
@@ -158,9 +147,5 @@ public class BossData {
 
     public List<String> getOnDeathCommands() {
         return onDeathCommands;
-    }
-    
-    public String getId() {
-        return id;
     }
 }

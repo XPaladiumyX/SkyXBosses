@@ -16,7 +16,7 @@ import static org.bukkit.Bukkit.getLogger;
 
 public class BossManager {
     private final SkyXBosses plugin;
-    private final Map<String, BossData> bosses = new HashMap<>(); // clé = ID simple
+    private final Map<String, BossData> bosses = new HashMap<>();
     private final PowerExecutor powerExecutor;
 
     public BossManager(SkyXBosses plugin) {
@@ -47,9 +47,6 @@ public class BossManager {
             Bukkit.getScheduler().runTaskTimer(plugin, () -> {
                 LivingEntity spawned = boss.spawn();
                 if (spawned != null) {
-                    // Ajouter un tag unique pour identifier le boss
-                    String bossId = boss.getId();
-                    spawned.addScoreboardTag(bossId.toUpperCase());
                     powerExecutor.startForBoss(spawned, boss);
                 }
             }, 20L, boss.getSpawnCooldown() * 20L);
@@ -60,10 +57,9 @@ public class BossManager {
         return bosses.get(id.toUpperCase());
     }
 
-    // Méthode pour retrouver un boss via l'entité (listener)
     public BossData getBossFromEntity(LivingEntity entity) {
         for (String tag : entity.getScoreboardTags()) {
-            BossData boss = getBoss(tag);
+            BossData boss = getBoss(tag.toUpperCase());
             if (boss != null) return boss;
         }
         return null;
