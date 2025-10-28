@@ -4,9 +4,17 @@ main: skyxnetwork.skyXBosses.SkyXBosses
 api-version: '1.21'
 prefix: SkyXCore-Logger
 authors: [ XPaladiumyX ]
-description: Made with love and determination
+description: A modular boss system for Sky X Network with configurable bosses and powers.
 website: skyxnetwork.net
 commands:
   spawnboss:
-    description: Spawns the Tempest Warden boss
-    usage: /spawnboss
+    description: Spawn a boss for testing
+    usage: /spawnboss <bossName>
+    permission: skyxbosses.spawnboss
+    permission-message: You don't have permission to use this command.
+
+  skyxbosses:
+    description: SkyXBosses main command
+    usage: /skyxbosses reload
+    permission: skyxbosses.admin
+    permission-message: You don't have permission to use this command.
