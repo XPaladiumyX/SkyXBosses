@@ -96,9 +96,8 @@ public class BossData {
         entity.setHealth(health);
         entity.setGlowing(true);
 
-        if (persistent && isPersistenceAllowed(entity.getType())) {
-            entity.setPersistent(true);
-        }
+        entity.setRemoveWhenFarAway(false);
+        entity.setPersistent(true);
 
         // Utiliser l'ID du boss comme tag
         entity.addScoreboardTag(id);
