@@ -116,9 +116,8 @@ public class BossData {
 
         // BossBar
         if (bossbarEnabled) {
-            BossBar bar = Bukkit.createBossBar(name, BarColor.RED, BarStyle.SOLID);
+            BossBar bar = Bukkit.createBossBar(name, BarColor.GREEN, BarStyle.SOLID);
 
-            // Tâche qui vérifie tous les 20 ticks (1 seconde)
             new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -128,10 +127,21 @@ public class BossData {
                         return;
                     }
 
-                    // Actualiser la progress
-                    bar.setProgress(entity.getHealth() / entity.getMaxHealth());
+                    double health = entity.getHealth();
+                    double maxHealth = entity.getMaxHealth();
+                    double progress = health / maxHealth;
 
-                    // Ajouter/retirer les joueurs selon leur distance
+                    // Actualiser le texte avec la vie
+                    bar.setTitle(ChatColor.translateAlternateColorCodes('&',
+                            name + " &c[" + (int) health + "/" + (int) maxHealth + " HP]"));
+                    bar.setProgress(Math.max(0, Math.min(1, progress)));
+
+                    // Changer la couleur selon la vie
+                    if (progress > 0.6) bar.setColor(BarColor.GREEN);
+                    else if (progress > 0.3) bar.setColor(BarColor.YELLOW);
+                    else bar.setColor(BarColor.RED);
+
+                    // Ajouter/retirer les joueurs selon leur distance (50 blocks)
                     Bukkit.getOnlinePlayers().forEach(player -> {
                         if (player.getWorld().equals(entity.getWorld()) &&
                                 player.getLocation().distanceSquared(entity.getLocation()) <= 50 * 50) {
@@ -140,8 +150,9 @@ public class BossData {
                             if (bar.getPlayers().contains(player)) bar.removePlayer(player);
                         }
                     });
+
                 }
-            }.runTaskTimer(SkyXBosses.getInstance(), 0, 20); // 20 ticks = 1 seconde
+            }.runTaskTimer(SkyXBosses.getInstance(), 0, 40); // 40 ticks = 2 secondes
         }
 
         // Spawn message
