@@ -30,7 +30,7 @@ public class BossDeathListener implements Listener {
 
         Player killer = boss.getKiller(); // Joueur tueur (peut être null)
 
-        // Top 3 damageurs
+        // Top damageurs
         List<Map.Entry<UUID, Double>> top = DamageTracker.getTopDamagers(boss);
 
         String damager1name = "None", damager2name = "None", damager3name = "None";
@@ -53,11 +53,11 @@ public class BossDeathListener implements Listener {
         }
 
         // Tous les joueurs ayant infligé des dégâts
-        String allPlayers = DamageTracker.getTopDamagers(boss).stream()
+        String allPlayers = top.stream()
                 .map(entry -> Bukkit.getOfflinePlayer(entry.getKey()).getName())
                 .collect(Collectors.joining(", "));
 
-        // Messages de mort
+        // Messages de mort pour tous
         for (String msg : data.getDeathMessages()) {
             String parsed = msg
                     .replace("$killer", (killer != null ? killer.getName() : "Unknown"))
@@ -74,17 +74,24 @@ public class BossDeathListener implements Listener {
             );
         }
 
-        // Commandes exécutées à la mort
+        // Commandes exécutées uniquement pour le top 3 damageurs
         for (String cmd : data.getOnDeathCommands()) {
-            String parsedCmd = cmd
-                    .replace("%boss%", boss.getName())
-                    .replace("%player%", killer != null ? killer.getName() : "console")
-                    .replace("%damager1%", damager1name)
-                    .replace("%damager2%", damager2name)
-                    .replace("%damager3%", damager3name)
-                    .replace("%players%", allPlayers.isEmpty() ? "None" : allPlayers);
+            for (int i = 0; i < Math.min(3, top.size()); i++) {
+                UUID uuid = top.get(i).getKey();
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null && player.isOnline()) {
+                    String parsedCmd = cmd
+                            .replace("%boss%", boss.getName())
+                            .replace("%player%", player.getName())
+                            .replace("%killer%", killer != null ? killer.getName() : "console")
+                            .replace("%damager1%", damager1name)
+                            .replace("%damager2%", damager2name)
+                            .replace("%damager3%", damager3name)
+                            .replace("%players%", allPlayers.isEmpty() ? "None" : allPlayers);
 
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsedCmd);
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsedCmd);
+                }
+            }
         }
 
         // Nettoyer les données du boss
