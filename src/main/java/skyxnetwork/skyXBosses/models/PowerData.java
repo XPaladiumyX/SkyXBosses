@@ -123,6 +123,20 @@ public class PowerData {
 
     @Override
     public String toString() {
-        return STR."PowerData{powerType='\{powerType}', cooldown=\{cooldown}, damage=\{damage}, radius=\{radius}, knockback=\{knockback}, speed=\{speed}, destructive=\{destructive}, minionType='\{minionType}', minionCount=\{minionCount}, minionHealth=\{minionHealth}, minionDamage=\{minionDamage}, particle=\{particle}, sound=\{sound}}";
+        return "PowerData{" +
+                "powerType='" + powerType + '\'' +
+                ", cooldown=" + cooldown +
+                ", damage=" + damage +
+                ", radius=" + radius +
+                ", knockback=" + knockback +
+                ", speed=" + speed +
+                ", destructive=" + destructive +
+                ", minionType='" + minionType + '\'' +
+                ", minionCount=" + minionCount +
+                ", minionHealth=" + minionHealth +
+                ", minionDamage=" + minionDamage +
+                ", particle=" + particle +
+                ", sound=" + sound +
+                '}';
     }
 }
