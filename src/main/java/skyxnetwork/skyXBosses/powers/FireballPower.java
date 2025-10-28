@@ -21,21 +21,21 @@ public class FireballPower extends AbstractPower {
 
         Location eye = boss.getEyeLocation();
 
-        // Direction vers le joueur
         Vector dir = target.getLocation().add(0, target.getEyeHeight() / 2, 0)
                 .toVector().subtract(eye.toVector()).normalize();
 
-        // Spawn de la fireball
-        Fireball fireball = boss.getWorld().spawn(eye.add(dir.multiply(1)), Fireball.class);
+        // ✅ spawn la fireball à 2 blocs devant le boss
+        Location spawnLoc = eye.add(dir.clone().multiply(2));
+
+        Fireball fireball = boss.getWorld().spawn(spawnLoc, Fireball.class);
         fireball.setShooter(boss);
         fireball.setDirection(dir);
-        fireball.setYield(0);
+        fireball.setYield(1.0F);
         fireball.setIsIncendiary(false);
-        fireball.setVelocity(dir.multiply(data.getSpeed()));
+        fireball.setVelocity(dir.multiply(data.getSpeed() * 0.5)); // ✅ plus lente
 
-        // Effets visuels et sonores
-        eye.getWorld().spawnParticle(data.getParticle(), eye, 30, 0.2, 0.2, 0.2, 0.05);
-        eye.getWorld().playSound(eye, data.getSound(), 1f, 1f);
+        spawnLoc.getWorld().spawnParticle(data.getParticle(), spawnLoc, 30, 0.2, 0.2, 0.2, 0.05);
+        spawnLoc.getWorld().playSound(spawnLoc, data.getSound(), 1f, 1f);
     }
 
     private Player getNearestPlayer() {

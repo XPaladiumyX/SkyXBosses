@@ -197,7 +197,7 @@ public class BossData {
 
     private boolean isPersistenceAllowed(EntityType type) {
         return switch (type) {
-            case BREEZE, WARDEN, ENDER_DRAGON -> false;
+            case WARDEN, ENDER_DRAGON -> false;
             default -> true;
         };
     }

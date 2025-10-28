@@ -20,6 +20,7 @@ public class ExplosionPower extends AbstractPower {
 
         boss.getNearbyEntities(data.getRadius(), data.getRadius(), data.getRadius()).forEach(e -> {
             if (e instanceof LivingEntity le && le != boss) {
+                if (le.getScoreboardTags().contains("BOSS_MINION")) return; // ✅ ignore les minions
                 le.damage(data.getDamage(), boss);
             }
         });

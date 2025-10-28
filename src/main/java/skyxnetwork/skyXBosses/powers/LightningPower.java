@@ -18,11 +18,15 @@ public class LightningPower extends AbstractPower {
         Player target = getNearestPlayer();
         if (target == null) return;
 
-        Location loc = target.getLocation();
-        loc.getWorld().strikeLightningEffect(loc);
+        Location loc = target.getLocation().clone();
+
+        // ✅ Utiliser un vrai éclair qui touche, même en grotte
+        loc.getWorld().strikeLightning(loc);
+
         target.damage(data.getDamage(), boss);
 
-        loc.getWorld().spawnParticle(data.getParticle(), loc, 50, 0.3, 0.3, 0.3, 0.1);
+        // ✅ effets visuels autour du joueur
+        loc.getWorld().spawnParticle(data.getParticle(), loc, 60, 0.4, 0.4, 0.4, 0.1);
         loc.getWorld().playSound(loc, data.getSound(), 1f, 1f);
     }
 

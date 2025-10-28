@@ -30,6 +30,7 @@ public class SummonMinionsPower extends AbstractPower {
                 mob.setCustomNameVisible(true);
                 mob.setHealth(data.getMinionHealth());
                 mob.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(data.getMinionDamage());
+                mob.addScoreboardTag("BOSS_MINION"); // ✅ Immunisé contre les autres pouvoirs
             }
         }
     }

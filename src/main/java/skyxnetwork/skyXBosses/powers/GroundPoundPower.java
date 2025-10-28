@@ -20,6 +20,7 @@ public class GroundPoundPower extends AbstractPower {
 
         boss.getNearbyEntities(data.getRadius(), data.getRadius(), data.getRadius()).forEach(e -> {
             if (e instanceof LivingEntity le && le != boss) {
+                if (le.getScoreboardTags().contains("BOSS_MINION")) return; // ✅ ignore les minions
                 le.damage(data.getDamage(), boss);
                 Vector knock = le.getLocation().toVector().subtract(loc.toVector()).normalize().multiply(data.getKnockback());
                 knock.setY(0.5);
