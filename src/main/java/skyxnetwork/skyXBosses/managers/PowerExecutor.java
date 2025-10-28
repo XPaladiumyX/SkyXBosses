@@ -45,7 +45,7 @@ public class PowerExecutor {
             return;
         }
 
-        BukkitTask task = new BukkitRunnable() {
+        BukkitRunnable runnable = new BukkitRunnable() {
             @Override
             public void run() {
                 if (boss.isDead() || !boss.isValid()) {
@@ -58,16 +58,35 @@ public class PowerExecutor {
                 AbstractPower power = createPower(chosen, boss);
                 if (power != null) power.execute();
 
-                // Planifier la prochaine attaque selon la vie
+                // Planifier la prochaine attaque après un délai basé sur la vie
                 double healthPercent = boss.getHealth() / boss.getMaxHealth();
                 long baseDelay = 100L; // 5 sec
                 long minDelay = 20L;   // 1 sec
                 long delay = (long) (minDelay + (baseDelay - minDelay) * healthPercent);
 
-                scheduleNextAttack(boss, powers); // récursion propre
+                // Planifier la prochaine exécution correctement
+                scheduleNextAttackWithDelay(boss, powers, delay);
             }
-        }.runTask(plugin); // planifie la tâche immédiate
+        };
 
+        BukkitTask task = runnable.runTask(plugin); // exécution immédiate de la première attaque
+        activeTasks.put(boss.getUniqueId(), task);
+    }
+
+    private void scheduleNextAttackWithDelay(LivingEntity boss, List<PowerData> powers, long delay) {
+        if (boss.isDead() || !boss.isValid()) {
+            stopForBoss(boss);
+            return;
+        }
+
+        BukkitRunnable runnable = new BukkitRunnable() {
+            @Override
+            public void run() {
+                scheduleNextAttack(boss, powers); // maintenant on rappelle la méthode après un vrai délai
+            }
+        };
+
+        BukkitTask task = runnable.runTaskLater(plugin, delay);
         activeTasks.put(boss.getUniqueId(), task);
     }
 
