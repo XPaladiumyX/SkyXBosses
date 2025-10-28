@@ -22,6 +22,9 @@ public class BossDeathListener implements Listener {
     public void onBossDeath(EntityDeathEvent e) {
         if (!(e.getEntity() instanceof LivingEntity boss)) return;
 
+        // ✅ Ignore les minions
+        if (boss.getScoreboardTags().contains("BOSS_MINION")) return;
+
         BossData data = SkyXBosses.getInstance().getBossManager().getBossFromEntity(boss);
         if (data == null) return;
 
