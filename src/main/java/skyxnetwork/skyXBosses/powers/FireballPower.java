@@ -5,7 +5,7 @@ import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.Vector;
+import org.bukkit.scheduler.BukkitRunnable;
 import skyxnetwork.skyXBosses.models.PowerData;
 
 public class FireballPower extends AbstractPower {
@@ -16,39 +16,42 @@ public class FireballPower extends AbstractPower {
 
     @Override
     public void execute() {
-        Player target = getNearestPlayer();
-        if (target == null) return;
+        boss.getNearbyEntities(data.getRadius(), data.getRadius(), data.getRadius()).forEach(e -> {
+            if (e instanceof Player player) {
 
-        Location eye = boss.getEyeLocation();
+                // spawn 5 blocks au-dessus de la tête
+                Location spawnLoc = player.getLocation().clone().add(0, 5 + player.getEyeHeight(), 0);
 
-        Vector dir = target.getLocation().add(0, target.getEyeHeight() / 2, 0)
-                .toVector().subtract(eye.toVector()).normalize();
+                Fireball fb = boss.getWorld().spawn(spawnLoc, Fireball.class);
+                fb.setShooter(boss);
 
-        // ✅ spawn la fireball à 2 blocs devant le boss
-        Location spawnLoc = eye.add(dir.clone().multiply(2));
+                // Direction vers le joueur
+                fb.setDirection(player.getLocation().toVector().subtract(spawnLoc.toVector()).normalize());
+                fb.setYield(0f);
+                fb.setIsIncendiary(false);
 
-        Fireball fireball = boss.getWorld().spawn(spawnLoc, Fireball.class);
-        fireball.setShooter(boss);
-        fireball.setDirection(dir);
-        fireball.setYield(1.0F);
-        fireball.setIsIncendiary(false);
-        fireball.setVelocity(dir.multiply(data.getSpeed() * 0.5)); // ✅ plus lente
+                // Tâche pour vérifier collision avec le joueur
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (fb.isDead() || !fb.isValid()) {
+                            cancel();
+                            return;
+                        }
 
-        spawnLoc.getWorld().spawnParticle(data.getParticle(), spawnLoc, 30, 0.2, 0.2, 0.2, 0.05);
-        spawnLoc.getWorld().playSound(spawnLoc, data.getSound(), 1f, 1f);
-    }
+                        // Si la fireball touche le joueur
+                        if (fb.getLocation().distanceSquared(player.getLocation()) < 1) {
 
-    private Player getNearestPlayer() {
-        double range = data.getRadius();
-        Player nearest = null;
-        double closest = Double.MAX_VALUE;
-        for (Player p : boss.getWorld().getPlayers()) {
-            double dist = p.getLocation().distance(boss.getLocation());
-            if (dist < closest && dist <= range) {
-                closest = dist;
-                nearest = p;
+                            // ✅ stun pendant 2 secondes
+                            player.setFreezeTicks(40); // 40 ticks = 2 sec
+                            player.sendMessage("§cYou have been stunned by a fireball for 2 seconds!");
+
+                            fb.remove();
+                            cancel();
+                        }
+                    }
+                }.runTaskTimer(plugin, 0L, 1L); // vérifie chaque tick
             }
-        }
-        return nearest;
+        });
     }
 }

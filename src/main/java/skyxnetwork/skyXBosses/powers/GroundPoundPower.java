@@ -22,11 +22,21 @@ public class GroundPoundPower extends AbstractPower {
             if (e instanceof LivingEntity le && le != boss) {
                 if (le.getScoreboardTags().contains("BOSS_MINION")) return; // ✅ ignore les minions
                 le.damage(data.getDamage(), boss);
-                Vector knock = le.getLocation().toVector().subtract(loc.toVector()).normalize().multiply(data.getKnockback());
-                knock.setY(0.5);
-                le.setVelocity(knock);
+
+                // Calcul du knockback
+                Vector knock = le.getLocation().toVector().subtract(loc.toVector());
+
+                // On applique le knockback uniquement si le vecteur est valide
+                if (knock.length() > 0) {
+                    knock = knock.normalize().multiply(data.getKnockback());
+                    knock.setY(0.5);
+
+                    // Vérifier que les valeurs sont finies avant de setVelocity
+                    if (Double.isFinite(knock.getX()) && Double.isFinite(knock.getY()) && Double.isFinite(knock.getZ())) {
+                        le.setVelocity(knock);
+                    }
+                }
             }
         });
     }
 }
-
