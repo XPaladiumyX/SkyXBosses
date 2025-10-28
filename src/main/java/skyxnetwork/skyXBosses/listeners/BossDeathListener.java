@@ -14,6 +14,7 @@ import skyxnetwork.skyXBosses.utils.DamageTracker;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class BossDeathListener implements Listener {
 
@@ -24,9 +25,9 @@ public class BossDeathListener implements Listener {
         BossData data = SkyXBosses.getInstance().getBossManager().getBossFromEntity(boss);
         if (data == null) return;
 
-        Player killer = boss.getKiller(); // ✅ Joueur tueur (peut être null)
+        Player killer = boss.getKiller(); // Joueur tueur (peut être null)
 
-        // 🩸 Récupère le top 3 des damageurs
+        // Top 3 damageurs
         List<Map.Entry<UUID, Double>> top = DamageTracker.getTopDamagers(boss);
 
         String damager1name = "None", damager2name = "None", damager3name = "None";
@@ -48,7 +49,12 @@ public class BossDeathListener implements Listener {
             damager3damage = e3.getValue();
         }
 
-        // 💬 Messages de mort avec placeholders dynamiques
+        // Tous les joueurs ayant infligé des dégâts
+        String allPlayers = DamageTracker.getTopDamagers(boss).stream()
+                .map(entry -> Bukkit.getOfflinePlayer(entry.getKey()).getName())
+                .collect(Collectors.joining(", "));
+
+        // Messages de mort
         for (String msg : data.getDeathMessages()) {
             String parsed = msg
                     .replace("$killer", (killer != null ? killer.getName() : "Unknown"))
@@ -57,26 +63,28 @@ public class BossDeathListener implements Listener {
                     .replace("$damager2name", damager2name)
                     .replace("$damager2damage", String.format("%.1f", damager2damage))
                     .replace("$damager3name", damager3name)
-                    .replace("$damager3damage", String.format("%.1f", damager3damage));
+                    .replace("$damager3damage", String.format("%.1f", damager3damage))
+                    .replace("$players", allPlayers.isEmpty() ? "None" : allPlayers);
 
             Bukkit.getOnlinePlayers().forEach(p ->
                     p.sendMessage(ChatColor.translateAlternateColorCodes('&', parsed))
             );
         }
 
-        // ⚙️ Commandes exécutées à la mort
+        // Commandes exécutées à la mort
         for (String cmd : data.getOnDeathCommands()) {
             String parsedCmd = cmd
                     .replace("%boss%", boss.getName())
                     .replace("%player%", killer != null ? killer.getName() : "console")
                     .replace("%damager1%", damager1name)
                     .replace("%damager2%", damager2name)
-                    .replace("%damager3%", damager3name);
+                    .replace("%damager3%", damager3name)
+                    .replace("%players%", allPlayers.isEmpty() ? "None" : allPlayers);
 
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsedCmd);
         }
 
-        // 🧹 Nettoyer les données du boss après sa mort
+        // Nettoyer les données du boss
         DamageTracker.clear(boss);
     }
 }
