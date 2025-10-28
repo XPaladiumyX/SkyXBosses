@@ -92,7 +92,7 @@ public class PowerExecutor {
         for (int milestone : milestones) {
             if (healthPercent * 100 <= milestone && !triggered.contains(milestone)) {
                 triggered.add(milestone);
-                Bukkit.broadcastMessage("§cThe boss " + boss.getName() + " §rhas reached " + milestone + "% of its life! It will now attack faster!");
+                Bukkit.broadcastMessage("§cThe boss " + boss.getName() + " §r§chas reached " + milestone + "% of its life! It will now attack faster!");
             }
         }
     }
