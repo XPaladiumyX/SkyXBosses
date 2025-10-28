@@ -105,6 +105,23 @@ public class BossData {
         // ✅ Nouvelle gestion du "scale" (fonctionne sur Breeze, Slime, Phantom, etc.)
         applyEntityScale(entity, scale);
 
+        try {
+            var speedAttr = entity.getAttribute(Attribute.MOVEMENT_SPEED);
+            if (speedAttr != null) {
+                speedAttr.setBaseValue(speed); // speed = movementSpeedAttribute du config
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Appliquer les dégâts correctement
+        try {
+            var damageAttr = entity.getAttribute(Attribute.ATTACK_DAMAGE);
+            if (damageAttr != null) {
+                damageAttr.setBaseValue(damage); // damage = damage du config
+            }
+        } catch (Exception ignored) {
+        }
+
         // Follow distance pour l'IA
         try {
             if (entity instanceof LivingEntity le) {

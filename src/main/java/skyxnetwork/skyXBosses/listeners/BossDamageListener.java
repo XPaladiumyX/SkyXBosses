@@ -20,6 +20,7 @@ public class BossDamageListener implements Listener {
         // Vérifie si la cible est un boss connu
         BossData data = SkyXBosses.getInstance().getBossManager().getBossFromEntity(boss);
         if (data == null) return; // pas un boss géré
+        
 
         Player damager = null;
 
