@@ -1,0 +1,8 @@
+# Boss jumps and hits the ground causing area damage and knockback
+powerType: GROUND_POUND
+cooldown: 20
+damage: 12.0
+radius: 10
+knockback: 2.0
+particle: CLOUD
+sound: ENTITY_IRON_GOLEM_ATTACK

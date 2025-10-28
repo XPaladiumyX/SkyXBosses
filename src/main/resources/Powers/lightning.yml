@@ -1,0 +1,7 @@
+# Strikes lightning on the nearest player
+powerType: LIGHTNING
+cooldown: 15
+damage: 10.0
+radius: 20
+particle: ELECTRIC_SPARK
+sound: ENTITY_LIGHTNING_BOLT_THUNDER

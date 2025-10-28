@@ -1,0 +1,8 @@
+# Creates a non-destructive explosion around the boss
+powerType: EXPLOSION
+cooldown: 25
+damage: 14.0
+radius: 8
+destructive: false
+particle: EXPLOSION_HUGE
+sound: ENTITY_GENERIC_EXPLODE

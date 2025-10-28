@@ -1,0 +1,7 @@
+# Shoots a large fireball at the nearest player
+powerType: FIREBALL
+cooldown: 10 # seconds
+damage: 8.0
+speed: 1.2
+sound: ENTITY_BLAZE_SHOOT
+particles: FLAME
