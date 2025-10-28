@@ -1,0 +1,10 @@
+# Summons some minions to assist the boss
+powerType: SUMMON_MINIONS
+cooldown: 40
+minionType: ZOMBIE
+minionCount: 3
+minionHealth: 10
+minionDamage: 3
+radius: 5
+particle: PORTAL
+sound: ENTITY_ZOMBIE_AMBIENT
