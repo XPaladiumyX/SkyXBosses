@@ -48,7 +48,6 @@ public class PowerExecutor {
             AbstractPower power = createPower(chosen, boss);
 
             if (power != null) {
-                plugin.getLogger().info("⚡ Boss " + boss.getName() + " used power " + chosen.getPowerType());
                 power.execute();
             }
 
