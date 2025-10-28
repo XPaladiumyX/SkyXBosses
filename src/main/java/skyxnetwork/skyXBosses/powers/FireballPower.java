@@ -6,6 +6,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,8 +21,7 @@ public class FireballPower extends AbstractPower implements Listener {
     private final UUID bossId;
     private final Random random = new Random();
     private final Set<UUID> stunnedPlayers = new HashSet<>();
-    private final Map<UUID, Fireball> followingFireballs = new HashMap<>();
-    private final Map<UUID, Set<UUID>> fireballHitPlayers = new HashMap<>(); // Fireball UUID -> joueurs touchés
+    private final Set<UUID> activeFireballs = new HashSet<>();
 
     public FireballPower(JavaPlugin plugin, LivingEntity boss, PowerData data) {
         super(plugin, boss, data);
@@ -32,8 +32,7 @@ public class FireballPower extends AbstractPower implements Listener {
     @Override
     public void execute() {
         List<Player> nearbyPlayers = boss.getNearbyEntities(data.getRadius(), data.getRadius(), data.getRadius())
-                .stream().filter(e -> e instanceof Player).map(e -> (Player) e)
-                .toList();
+                .stream().filter(e -> e instanceof Player).map(e -> (Player) e).toList();
 
         if (nearbyPlayers.isEmpty()) return;
 
@@ -56,15 +55,23 @@ public class FireballPower extends AbstractPower implements Listener {
             boss.getWorld().spawnParticle(data.getParticle(), spawnLoc, 10, 0.2, 0.2, 0.2, 0.05);
             boss.getWorld().playSound(spawnLoc, data.getSound(), 1f, 1f);
 
-            followingFireballs.put(fb.getUniqueId(), fb);
-            fireballHitPlayers.put(fb.getUniqueId(), new HashSet<>());
+            activeFireballs.add(fb.getUniqueId());
 
+            // Suivi de la fireball
             new BukkitRunnable() {
+                final Set<UUID> alreadyHit = new HashSet<>();
+
                 @Override
                 public void run() {
-                    if (!fb.isValid() || target.isDead() || !followingFireballs.containsKey(fb.getUniqueId())) {
-                        followingFireballs.remove(fb.getUniqueId());
-                        fireballHitPlayers.remove(fb.getUniqueId());
+                    if (!fb.isValid() || target.isDead() || !activeFireballs.contains(fb.getUniqueId())) {
+                        activeFireballs.remove(fb.getUniqueId());
+                        cancel();
+                        return;
+                    }
+
+                    // Stop suivi si la fireball a été renvoyée
+                    if (!(fb.getShooter() instanceof LivingEntity l && l.getUniqueId().equals(bossId))) {
+                        activeFireballs.remove(fb.getUniqueId());
                         cancel();
                         return;
                     }
@@ -94,22 +101,29 @@ public class FireballPower extends AbstractPower implements Listener {
         ));
     }
 
+    // STOP fireball follow si le joueur la frappe
+    @EventHandler
+    public void onFireballHitByPlayer(EntityDamageByEntityEvent e) {
+        if (!(e.getEntity() instanceof Fireball fb)) return;
+        if (!(e.getDamager() instanceof Player)) return;
+        if (!activeFireballs.contains(fb.getUniqueId())) return;
+
+        activeFireballs.remove(fb.getUniqueId());
+        // On ne met plus de velocity, la fireball se comporte comme normale
+    }
+
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent e) {
         if (!(e.getEntity() instanceof Fireball fb)) return;
 
-        // Stop suivi si suivie
-        followingFireballs.remove(fb.getUniqueId());
+        if (!activeFireballs.contains(fb.getUniqueId())) return;
+        activeFireballs.remove(fb.getUniqueId());
 
-        // Fireball du boss uniquement
         if (fb.getShooter() == null || !(fb.getShooter() instanceof LivingEntity bossShooter)) return;
         if (!bossShooter.getUniqueId().equals(bossId)) return;
 
-        Set<UUID> alreadyHit = fireballHitPlayers.getOrDefault(fb.getUniqueId(), new HashSet<>());
-
         fb.getNearbyEntities(1.5, 1.5, 1.5).forEach(ent -> {
-            if (ent instanceof Player player && !alreadyHit.contains(player.getUniqueId())) {
-                alreadyHit.add(player.getUniqueId());
+            if (ent instanceof Player player && !stunnedPlayers.contains(player.getUniqueId())) {
                 stunnedPlayers.add(player.getUniqueId());
                 player.sendMessage("§cYou have been stunned for 4 seconds!");
 
@@ -129,6 +143,5 @@ public class FireballPower extends AbstractPower implements Listener {
 
         fb.getWorld().createExplosion(fb.getLocation(), 0f, false, false, null);
         fb.remove();
-        fireballHitPlayers.remove(fb.getUniqueId());
     }
 }
