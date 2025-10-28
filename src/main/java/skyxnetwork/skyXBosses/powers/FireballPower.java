@@ -43,12 +43,12 @@ public class FireballPower extends AbstractPower implements Listener {
             // Choisir un joueur aléatoire
             Player target = nearbyPlayers.get(random.nextInt(nearbyPlayers.size()));
 
-            // Spawn aléatoire autour du boss
+            // Spawn aléatoire autour du joueur pour effet chaotique
             double offsetX = (random.nextDouble() - 0.5) * 6; // ±3 blocks
             double offsetZ = (random.nextDouble() - 0.5) * 6; // ±3 blocks
-            double offsetY = 1 + random.nextDouble() * 2; // 1 à 3 blocks de hauteur
+            double offsetY = 2 + random.nextDouble() * 4;     // 2 à 6 blocks au-dessus du joueur
 
-            Location spawnLoc = boss.getLocation().clone().add(offsetX, offsetY, offsetZ);
+            Location spawnLoc = target.getLocation().clone().add(offsetX, offsetY, offsetZ);
 
             Fireball fb = boss.getWorld().spawn(spawnLoc, Fireball.class);
             fb.setShooter(boss);
