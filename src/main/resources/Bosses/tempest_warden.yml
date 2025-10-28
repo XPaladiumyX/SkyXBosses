@@ -39,6 +39,6 @@ deathMessages:
   - '&e&l    3rd Damager: $damager3name &ewith $damager3damage damage!'
   - '&aSlayers: $players'
   - '&e&l---------------------------------------------'
-# Commands to execute when the boss is killed
+# Commands to execute when the boss is killed, give the reward to everyplayers who hurted the boss atleast one time.
 onDeathCommands:
-  - 'give {player} minecraft:diamond 3'
+  - 'give %player% minecraft:diamond 3'
