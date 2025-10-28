@@ -1,7 +1,7 @@
 package skyxnetwork.skyXBosses.managers;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import skyxnetwork.skyXBosses.SkyXBosses;
 import skyxnetwork.skyXBosses.models.BossData;
@@ -24,7 +24,6 @@ public class PowerExecutor {
     public void startForBoss(LivingEntity boss, BossData bossData) {
         if (activeTasks.containsKey(boss.getUniqueId())) return;
 
-        // Récupère la liste des pouvoirs configurés
         List<String> powerNames = bossData.getPowers();
         if (powerNames.isEmpty()) return;
 
@@ -36,24 +35,34 @@ public class PowerExecutor {
 
         if (powers.isEmpty()) return;
 
-        // Création d'une tâche répétée
-        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            if (boss.isDead() || !boss.isValid()) {
-                stopForBoss(boss);
-                return;
+        // Tâche récursive pour ajuster la vitesse d'attaque selon la vie
+        BukkitRunnable runnable = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (boss.isDead() || !boss.isValid()) {
+                    stopForBoss(boss);
+                    cancel();
+                    return;
+                }
+
+                // Sélection aléatoire d'un pouvoir
+                PowerData chosen = powers.get(new Random().nextInt(powers.size()));
+                AbstractPower power = createPower(chosen, boss);
+
+                if (power != null) power.execute();
+
+                // Replanifier selon la vie actuelle
+                double healthPercent = boss.getHealth() / boss.getMaxHealth(); // 1.0 = full hp
+                long baseDelay = 100L; // 5 sec
+                long minDelay = 20L;   // 1 sec
+                long delay = (long) (minDelay + (baseDelay - minDelay) * healthPercent);
+
+                this.runTaskLater(plugin, delay);
             }
+        };
 
-            // Sélection aléatoire d'un pouvoir
-            PowerData chosen = powers.get(new Random().nextInt(powers.size()));
-            AbstractPower power = createPower(chosen, boss);
-
-            if (power != null) {
-                power.execute();
-            }
-
-        }, 20L, 100L); // tous les 5s → tu peux ajuster ici
-
-        activeTasks.put(boss.getUniqueId(), task);
+        runnable.runTask(plugin);
+        activeTasks.put(boss.getUniqueId(), (BukkitTask) runnable);
     }
 
     public void stopForBoss(LivingEntity boss) {
