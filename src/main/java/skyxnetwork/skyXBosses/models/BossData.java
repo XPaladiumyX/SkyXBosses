@@ -100,10 +100,8 @@ public class BossData {
         // Utiliser l'ID du boss comme tag
         entity.addScoreboardTag(id);
 
-        try {
-            entity.getClass().getMethod("setScale", float.class).invoke(entity, (float) scale);
-        } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException ignored) {
-        }
+        // ✅ Nouvelle gestion du "scale" (fonctionne sur Breeze, Slime, Phantom, etc.)
+        applyEntityScale(entity, scale);
 
         // Follow distance pour l'IA
         try {
@@ -170,5 +168,29 @@ public class BossData {
 
     public List<String> getOnDeathCommands() {
         return onDeathCommands;
+    }
+    
+    private void applyEntityScale(LivingEntity entity, double scale) {
+        try {
+            // Méthode Paper moderne (1.21+)
+            var method = entity.getClass().getMethod("setScale", float.class);
+            method.invoke(entity, (float) scale);
+            SkyXBosses.getInstance().getLogger().info("✔ Scale applied via direct API for " + entity.getType());
+            return;
+        } catch (NoSuchMethodException ignored) {
+            // Pas exposée par Bukkit — fallback NMS
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        try {
+            // Fallback via NMS (accès direct à la méthode NMS setScale)
+            Object handle = entity.getClass().getMethod("getHandle").invoke(entity);
+            var method = handle.getClass().getMethod("setScale", float.class);
+            method.invoke(handle, (float) scale);
+            SkyXBosses.getInstance().getLogger().info("✔ Scale applied via NMS for " + entity.getType());
+        } catch (Exception ex) {
+            SkyXBosses.getInstance().getLogger().warning("⚠ Could not apply scale for " + entity.getType() + ": " + ex.getMessage());
+        }
     }
 }
