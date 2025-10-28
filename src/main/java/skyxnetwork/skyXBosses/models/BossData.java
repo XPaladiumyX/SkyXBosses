@@ -34,8 +34,10 @@ public class BossData {
     private final List<String> deathMessages;
     private final List<String> onDeathCommands;
     private final double scale;
+    private final String id;
 
-    public BossData(YamlConfiguration config) {
+    public BossData(YamlConfiguration config, String id) {
+        this.id = id.toUpperCase();
         this.name = ChatColor.translateAlternateColorCodes('&', config.getString("name", "Unknown Boss"));
         this.entityType = EntityType.valueOf(config.getString("entityType", "ZOMBIE").toUpperCase());
         this.health = config.getDouble("health", 20);
@@ -157,8 +159,8 @@ public class BossData {
     public List<String> getOnDeathCommands() {
         return onDeathCommands;
     }
-
-    public String getName() {
-        return name;
+    
+    public String getId() {
+        return id;
     }
 }

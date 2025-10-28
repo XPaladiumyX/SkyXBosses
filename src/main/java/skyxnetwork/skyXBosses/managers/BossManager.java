@@ -33,9 +33,8 @@ public class BossManager {
         for (File file : folder.listFiles()) {
             if (!file.getName().endsWith(".yml")) continue;
             YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-            BossData boss = new BossData(config);
-            // Stocker par un ID simple, sans couleurs ni espaces
             String bossId = file.getName().replace(".yml", "").toUpperCase();
+            BossData boss = new BossData(config, bossId);
             bosses.put(bossId, boss);
         }
 
@@ -49,7 +48,8 @@ public class BossManager {
                 LivingEntity spawned = boss.spawn();
                 if (spawned != null) {
                     // Ajouter un tag unique pour identifier le boss
-                    spawned.addScoreboardTag(boss.getName().replaceAll("§", "").toUpperCase());
+                    String bossId = boss.getId();
+                    spawned.addScoreboardTag(bossId.toUpperCase());
                     powerExecutor.startForBoss(spawned, boss);
                 }
             }, 20L, boss.getSpawnCooldown() * 20L);
