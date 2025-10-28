@@ -14,6 +14,8 @@ IsBossbarEnabled: true
 isPersistent: true
 # Movement speed of the boss
 movementSpeedAttribute: 0.35
+# The boss Size (1.0 Default Mob Size)
+scale: 1.0
 # What special attacks does the boss? Any special attacks can be created in the Powers folder.
 powers:
   - LIGHTNING
