@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -18,7 +19,9 @@ public class FireballPower extends AbstractPower implements Listener {
 
     private final UUID bossId;
     private final Random random = new Random();
-    private final Set<UUID> stunnedPlayers = new HashSet<>(); // pour éviter le spam
+    private final Set<UUID> stunnedPlayers = new HashSet<>();
+    private final Map<UUID, Fireball> followingFireballs = new HashMap<>();
+    private final Map<UUID, Set<UUID>> fireballHitPlayers = new HashMap<>(); // Fireball UUID -> joueurs touchés
 
     public FireballPower(JavaPlugin plugin, LivingEntity boss, PowerData data) {
         super(plugin, boss, data);
@@ -34,42 +37,42 @@ public class FireballPower extends AbstractPower implements Listener {
 
         if (nearbyPlayers.isEmpty()) return;
 
-        int fireballCount = 1 + random.nextInt(2); // 1 ou 2 fireballs
+        int fireballCount = 1 + random.nextInt(2);
         for (int i = 0; i < fireballCount; i++) {
 
             Player target = nearbyPlayers.get(random.nextInt(nearbyPlayers.size()));
 
-            // Spawn autour du boss pour pas spawn sur le joueur
-            double offsetX = (random.nextDouble() - 0.5) * 2; // ±1 block
-            double offsetZ = (random.nextDouble() - 0.5) * 2; // ±1 block
-            double offsetY = boss.getHeight() / 2; // à la hauteur du boss
+            double offsetX = (random.nextDouble() - 0.5) * 2;
+            double offsetZ = (random.nextDouble() - 0.5) * 2;
+            double offsetY = boss.getHeight() / 2;
             Location spawnLoc = boss.getLocation().clone().add(offsetX, offsetY, offsetZ);
 
             Fireball fb = boss.getWorld().spawn(spawnLoc, Fireball.class);
             fb.setShooter(boss);
             fb.setYield(0f);
             fb.setIsIncendiary(false);
-
-            // Cacher le nom
             fb.setCustomNameVisible(false);
 
-            // Particles + son
             boss.getWorld().spawnParticle(data.getParticle(), spawnLoc, 10, 0.2, 0.2, 0.2, 0.05);
             boss.getWorld().playSound(spawnLoc, data.getSound(), 1f, 1f);
 
-            // Fireball suit le joueur
+            followingFireballs.put(fb.getUniqueId(), fb);
+            fireballHitPlayers.put(fb.getUniqueId(), new HashSet<>());
+
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    if (!fb.isValid() || target.isDead()) {
+                    if (!fb.isValid() || target.isDead() || !followingFireballs.containsKey(fb.getUniqueId())) {
+                        followingFireballs.remove(fb.getUniqueId());
+                        fireballHitPlayers.remove(fb.getUniqueId());
                         cancel();
                         return;
                     }
 
-                    Vector direction = target.getLocation().clone().add(0, target.getEyeHeight() / 2, 0)
+                    Vector direction = target.getLocation().add(0, target.getEyeHeight() / 2, 0)
                             .toVector().subtract(fb.getLocation().toVector())
-                            .normalize()
-                            .multiply(data.getSpeed() * 0.3); // vitesse réduite
+                            .normalize().multiply(data.getSpeed() * 0.3);
+
                     fb.setVelocity(direction);
                 }
             }.runTaskTimer(plugin, 0L, 1L);
@@ -77,41 +80,55 @@ public class FireballPower extends AbstractPower implements Listener {
     }
 
     @EventHandler
+    public void onPlayerMove(PlayerMoveEvent e) {
+        if (!stunnedPlayers.contains(e.getPlayer().getUniqueId())) return;
+
+        Location from = e.getFrom();
+        Location to = e.getTo();
+        if (to == null) return;
+
+        e.getPlayer().teleport(new Location(
+                e.getPlayer().getWorld(),
+                from.getX(), to.getY(), from.getZ(),
+                to.getYaw(), to.getPitch()
+        ));
+    }
+
+    @EventHandler
     public void onProjectileHit(ProjectileHitEvent e) {
         if (!(e.getEntity() instanceof Fireball fb)) return;
 
+        // Stop suivi si suivie
+        followingFireballs.remove(fb.getUniqueId());
+
+        // Fireball du boss uniquement
         if (fb.getShooter() == null || !(fb.getShooter() instanceof LivingEntity bossShooter)) return;
-        if (!bossShooter.getUniqueId().equals(bossId)) return; // uniquement les fireballs du boss
+        if (!bossShooter.getUniqueId().equals(bossId)) return;
 
-        // Appliquer le stun aux joueurs proches
+        Set<UUID> alreadyHit = fireballHitPlayers.getOrDefault(fb.getUniqueId(), new HashSet<>());
+
         fb.getNearbyEntities(1.5, 1.5, 1.5).forEach(ent -> {
-            if (ent instanceof Player player) {
-                if (stunnedPlayers.contains(player.getUniqueId())) return; // éviter le spam
-
+            if (ent instanceof Player player && !alreadyHit.contains(player.getUniqueId())) {
+                alreadyHit.add(player.getUniqueId());
                 stunnedPlayers.add(player.getUniqueId());
                 player.sendMessage("§cYou have been stunned for 4 seconds!");
 
-                // Bloquer le joueur avec un runnable
                 new BukkitRunnable() {
-                    final Location initialLoc = player.getLocation();
-
                     int ticks = 0;
 
                     @Override
                     public void run() {
-                        if (ticks++ >= 80 || player.isDead()) { // 4 sec
+                        if (ticks++ >= 80 || player.isDead()) {
                             stunnedPlayers.remove(player.getUniqueId());
                             cancel();
-                            return;
                         }
-                        // Reset position pour bloquer le joueur
-                        player.teleport(initialLoc);
                     }
                 }.runTaskTimer(plugin, 0L, 1L);
             }
         });
 
-        fb.getWorld().createExplosion(fb.getLocation(), 0f, false, false, null); // explosion sans dégâts
+        fb.getWorld().createExplosion(fb.getLocation(), 0f, false, false, null);
         fb.remove();
+        fireballHitPlayers.remove(fb.getUniqueId());
     }
 }
