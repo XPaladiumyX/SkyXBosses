@@ -19,6 +19,8 @@ public class BossManager {
     private final Map<String, BossData> bosses = new HashMap<>();
     private final PowerExecutor powerExecutor;
 
+    private final List<Integer> scheduledTaskIds = new ArrayList<>();
+
     public BossManager(SkyXBosses plugin) {
         this.plugin = plugin;
         this.powerExecutor = new PowerExecutor(plugin, plugin.getPowerManager());
@@ -41,15 +43,24 @@ public class BossManager {
         plugin.getLogger().info("Loaded " + bosses.size() + " bosses.");
     }
 
-    private void scheduleBossSpawns() {
+    public void scheduleBossSpawns() {
+        // Annuler les anciennes tâches si elles existent
+        for (int id : scheduledTaskIds) {
+            Bukkit.getScheduler().cancelTask(id);
+        }
+        scheduledTaskIds.clear();
+
         for (BossData boss : bosses.values()) {
             if (!boss.isEnabled()) continue;
-            Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+
+            int taskId = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
                 LivingEntity spawned = boss.spawn();
                 if (spawned != null) {
                     powerExecutor.startForBoss(spawned, boss);
                 }
-            }, 20L, boss.getSpawnCooldown() * 20L);
+            }, 20L, boss.getSpawnCooldown() * 20L).getTaskId();
+
+            scheduledTaskIds.add(taskId);
         }
     }
 
@@ -72,6 +83,7 @@ public class BossManager {
     public void reloadBosses() {
         bosses.clear();
         loadBosses();
+        scheduleBossSpawns(); // ← Important : relancer les spawns après reload
         getLogger().info("✅ Bosses reloaded successfully.");
     }
 
