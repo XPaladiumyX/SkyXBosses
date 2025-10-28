@@ -16,7 +16,7 @@ import static org.bukkit.Bukkit.getLogger;
 
 public class BossManager {
     private final SkyXBosses plugin;
-    private final Map<String, BossData> bosses = new HashMap<>();
+    private final Map<String, BossData> bosses = new HashMap<>(); // clé = ID simple
     private final PowerExecutor powerExecutor;
 
     public BossManager(SkyXBosses plugin) {
@@ -34,7 +34,9 @@ public class BossManager {
             if (!file.getName().endsWith(".yml")) continue;
             YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
             BossData boss = new BossData(config);
-            bosses.put(file.getName().replace(".yml", "").toUpperCase(), boss);
+            // Stocker par un ID simple, sans couleurs ni espaces
+            String bossId = file.getName().replace(".yml", "").toUpperCase();
+            bosses.put(bossId, boss);
         }
 
         plugin.getLogger().info("Loaded " + bosses.size() + " bosses.");
@@ -45,14 +47,26 @@ public class BossManager {
             if (!boss.isEnabled()) continue;
             Bukkit.getScheduler().runTaskTimer(plugin, () -> {
                 LivingEntity spawned = boss.spawn();
-                if (spawned != null)
+                if (spawned != null) {
+                    // Ajouter un tag unique pour identifier le boss
+                    spawned.addScoreboardTag(boss.getName().replaceAll("§", "").toUpperCase());
                     powerExecutor.startForBoss(spawned, boss);
+                }
             }, 20L, boss.getSpawnCooldown() * 20L);
         }
     }
 
-    public BossData getBoss(String name) {
-        return bosses.get(name.toUpperCase());
+    public BossData getBoss(String id) {
+        return bosses.get(id.toUpperCase());
+    }
+
+    // Méthode pour retrouver un boss via l'entité (listener)
+    public BossData getBossFromEntity(LivingEntity entity) {
+        for (String tag : entity.getScoreboardTags()) {
+            BossData boss = getBoss(tag);
+            if (boss != null) return boss;
+        }
+        return null;
     }
 
     public PowerExecutor getPowerExecutor() {
