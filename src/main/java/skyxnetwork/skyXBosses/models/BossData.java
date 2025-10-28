@@ -174,27 +174,25 @@ public class BossData {
     }
 
     private void applyEntityScale(LivingEntity entity, double scale) {
-        try {
-            // Méthode Paper moderne (1.21+)
-            var method = entity.getClass().getMethod("setScale", float.class);
-            method.invoke(entity, (float) scale);
-            SkyXBosses.getInstance().getLogger().info("✔ Scale applied via direct API for " + entity.getType());
-            return;
-        } catch (NoSuchMethodException ignored) {
-            // Pas exposée par Bukkit — fallback NMS
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        if (scale == 1.0) return; // inutile d'appliquer une scale par défaut
 
         try {
-            // Fallback via NMS (accès direct à la méthode NMS setScale)
-            Object handle = entity.getClass().getMethod("getHandle").invoke(entity);
-            var method = handle.getClass().getMethod("setScale", float.class);
-            method.invoke(handle, (float) scale);
-            SkyXBosses.getInstance().getLogger().info("✔ Scale applied via NMS for " + entity.getType());
-        } catch (Exception ex) {
-            SkyXBosses.getInstance().getLogger().warning("⚠ Could not apply scale for " + entity.getType() + ": " + ex.getMessage());
+            // Utilise l'attribut officiel Paper 1.21.3+ : GENERIC_SCALE
+            var instance = entity.getAttribute(Attribute.SCALE);
+            if (instance != null) {
+                instance.setBaseValue(scale);
+                SkyXBosses.getInstance().getLogger().info("✔ Scale attribute applied for " + entity.getType() + " (x" + scale + ")");
+                return;
+            }
+        } catch (NoSuchFieldError err) {
+            // L'attribut n'existe pas sur cette version de Bukkit → fallback
+            SkyXBosses.getInstance().getLogger().warning("⚠ GENERIC_SCALE attribute not supported on this server version.");
+        } catch (Exception e) {
+            SkyXBosses.getInstance().getLogger().warning("⚠ Error applying scale: " + e.getMessage());
         }
+
+        // Aucun fallback NMS → juste ignorer proprement (pour rester compatible multi-version)
+        SkyXBosses.getInstance().getLogger().warning("⚠ Could not apply scale for " + entity.getType() + " (unsupported server version)");
     }
 
     private boolean isPersistenceAllowed(EntityType type) {
