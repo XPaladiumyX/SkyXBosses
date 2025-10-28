@@ -2,9 +2,12 @@ package skyxnetwork.skyXBosses;
 
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.java.JavaPlugin;
+import skyxnetwork.skyXBosses.listeners.BossDeathListener;
 import skyxnetwork.skyXBosses.managers.BossManager;
 import skyxnetwork.skyXBosses.managers.PowerManager;
 import skyxnetwork.skyXBosses.models.BossData;
+
+import java.util.List;
 
 public class SkyXBosses extends JavaPlugin {
 
@@ -21,6 +24,8 @@ public class SkyXBosses extends JavaPlugin {
         bossManager = new BossManager(this);
 
         getLogger().info("SkyXBosses has been enabled successfully!");
+
+        // /spawnboss command
         this.getCommand("spawnboss").setExecutor((sender, command, label, args) -> {
             if (args.length == 0) {
                 sender.sendMessage("§cUsage: /spawnboss <bossName>");
@@ -28,7 +33,7 @@ public class SkyXBosses extends JavaPlugin {
             }
 
             String bossName = args[0].toUpperCase();
-            BossData bossData = bossManager.getBoss(bossName); // faudra créer getBoss()
+            BossData bossData = bossManager.getBoss(bossName);
             if (bossData == null) {
                 sender.sendMessage("§cBoss not found!");
                 return true;
@@ -48,7 +53,17 @@ public class SkyXBosses extends JavaPlugin {
             return true;
         });
 
-        getCommand("skyxbosses").setExecutor(new skyxnetwork.skyXBosses.SkyXBossesCommand(this));
+        // Tab completion
+        this.getCommand("spawnboss").setTabCompleter((sender, command, alias, args) -> {
+            if (args.length == 1) {
+                return bossManager.getAllBossNames();
+            }
+            return List.of();
+        });
+
+        getCommand("skyxbosses").setExecutor(new SkyXBossesCommand(this));
+        getServer().getPluginManager().registerEvents(new BossDeathListener(), this);
+
     }
 
     @Override

@@ -7,7 +7,9 @@ import skyxnetwork.skyXBosses.SkyXBosses;
 import skyxnetwork.skyXBosses.models.BossData;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.bukkit.Bukkit.getLogger;
@@ -61,5 +63,9 @@ public class BossManager {
         bosses.clear();
         loadBosses();
         getLogger().info("✅ Bosses reloaded successfully.");
+    }
+
+    public List<String> getAllBossNames() {
+        return new ArrayList<>(bosses.keySet());
     }
 }
