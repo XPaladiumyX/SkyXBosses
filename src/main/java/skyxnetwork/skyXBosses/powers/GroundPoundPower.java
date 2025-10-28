@@ -2,6 +2,7 @@ package skyxnetwork.skyXBosses.powers;
 
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 import skyxnetwork.skyXBosses.models.PowerData;
@@ -19,22 +20,18 @@ public class GroundPoundPower extends AbstractPower {
         loc.getWorld().playSound(loc, data.getSound(), 1f, 1f);
 
         boss.getNearbyEntities(data.getRadius(), data.getRadius(), data.getRadius()).forEach(e -> {
-            if (e instanceof LivingEntity le && le != boss) {
-                if (le.getScoreboardTags().contains("BOSS_MINION")) return; // ✅ ignore les minions
-                le.damage(data.getDamage(), boss);
+            if (!(e instanceof LivingEntity le) || le == boss) return;
+            if (le.getScoreboardTags().contains("BOSS_MINION")) return;
+            if (le instanceof Player player && player.getGameMode() == org.bukkit.GameMode.CREATIVE) return;
 
-                // Calcul du knockback
-                Vector knock = le.getLocation().toVector().subtract(loc.toVector());
+            le.damage(data.getDamage(), boss);
 
-                // On applique le knockback uniquement si le vecteur est valide
-                if (knock.length() > 0) {
-                    knock = knock.normalize().multiply(data.getKnockback());
-                    knock.setY(0.5);
-
-                    // Vérifier que les valeurs sont finies avant de setVelocity
-                    if (Double.isFinite(knock.getX()) && Double.isFinite(knock.getY()) && Double.isFinite(knock.getZ())) {
-                        le.setVelocity(knock);
-                    }
+            Vector knock = le.getLocation().toVector().subtract(loc.toVector());
+            if (knock.length() > 0) {
+                knock = knock.normalize().multiply(data.getKnockback());
+                knock.setY(0.5);
+                if (Double.isFinite(knock.getX()) && Double.isFinite(knock.getY()) && Double.isFinite(knock.getZ())) {
+                    le.setVelocity(knock);
                 }
             }
         });

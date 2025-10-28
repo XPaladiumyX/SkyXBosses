@@ -17,15 +17,12 @@ public class LightningPower extends AbstractPower {
     public void execute() {
         Player target = getNearestPlayer();
         if (target == null) return;
+        if (target.getGameMode() == org.bukkit.GameMode.CREATIVE) return;
 
-        Location loc = target.getLocation().clone();
-
-        // ✅ Utiliser un vrai éclair qui touche, même en grotte
+        Location loc = target.getLocation();
         loc.getWorld().strikeLightning(loc);
 
         target.damage(data.getDamage(), boss);
-
-        // ✅ effets visuels autour du joueur
         loc.getWorld().spawnParticle(data.getParticle(), loc, 60, 0.4, 0.4, 0.4, 0.1);
         loc.getWorld().playSound(loc, data.getSound(), 1f, 1f);
     }
@@ -35,7 +32,7 @@ public class LightningPower extends AbstractPower {
         Player nearest = null;
         double closest = Double.MAX_VALUE;
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p.getWorld() != boss.getWorld()) continue;
+            if (p.getWorld() != boss.getWorld() || p.getGameMode() == org.bukkit.GameMode.CREATIVE) continue;
             double dist = p.getLocation().distance(boss.getLocation());
             if (dist < closest && dist <= range) {
                 closest = dist;
@@ -45,4 +42,3 @@ public class LightningPower extends AbstractPower {
         return nearest;
     }
 }
-
