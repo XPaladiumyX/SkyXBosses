@@ -3,6 +3,7 @@ package skyxnetwork.skyXBosses.managers;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scheduler.BukkitRunnable;
 import skyxnetwork.skyXBosses.SkyXBosses;
 import skyxnetwork.skyXBosses.models.BossData;
 
@@ -18,7 +19,6 @@ public class BossManager {
     private final SkyXBosses plugin;
     private final Map<String, BossData> bosses = new HashMap<>();
     private final PowerExecutor powerExecutor;
-
     private final List<Integer> scheduledTaskIds = new ArrayList<>();
 
     public BossManager(SkyXBosses plugin) {
@@ -53,12 +53,33 @@ public class BossManager {
         for (BossData boss : bosses.values()) {
             if (!boss.isEnabled()) continue;
 
-            int taskId = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-                LivingEntity spawned = boss.spawn();
-                if (spawned != null) {
-                    powerExecutor.startForBoss(spawned, boss);
+            int cooldownSeconds = boss.getSpawnCooldown();
+
+            int taskId = new BukkitRunnable() {
+                private int timer = cooldownSeconds;
+
+                @Override
+                public void run() {
+                    // ✅ Si aucun joueur n'est connecté, on ne fait rien (on ne réduit pas le timer)
+                    if (Bukkit.getOnlinePlayers().isEmpty()) {
+                        return;
+                    }
+
+                    // Décrémenter le timer
+                    timer--;
+
+                    if (timer <= 0) {
+                        LivingEntity spawned = boss.spawn();
+                        if (spawned != null) {
+                            powerExecutor.startForBoss(spawned, boss);
+                            plugin.getLogger().info("✅ Spawned boss " + boss.getId() + " after cooldown.");
+                        }
+
+                        // Reset le timer
+                        timer = cooldownSeconds;
+                    }
                 }
-            }, 20L, boss.getSpawnCooldown() * 20L).getTaskId();
+            }.runTaskTimer(plugin, 20L, 20L).getTaskId(); // Vérifie chaque seconde
 
             scheduledTaskIds.add(taskId);
         }
