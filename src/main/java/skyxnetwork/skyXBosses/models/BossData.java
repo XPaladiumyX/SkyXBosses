@@ -33,6 +33,7 @@ public class BossData {
     private final String spawnMessage;
     private final List<String> deathMessages;
     private final List<String> onDeathCommands;
+    private final double scale;
 
     public BossData(YamlConfiguration config) {
         this.name = ChatColor.translateAlternateColorCodes('&', config.getString("name", "Unknown Boss"));
@@ -50,6 +51,7 @@ public class BossData {
         this.spawnMessage = ChatColor.translateAlternateColorCodes('&', config.getString("spawnMessage", ""));
         this.deathMessages = config.getStringList("deathMessages");
         this.onDeathCommands = config.getStringList("onDeathCommands");
+        this.scale = config.getDouble("scale", 1.0);
     }
 
     public boolean isEnabled() {
@@ -88,6 +90,13 @@ public class BossData {
         entity.setHealth(health);
         entity.setPersistent(persistent);
         entity.setGlowing(true);
+        entity.addScoreboardTag(name.replaceAll("§", ""));
+
+        try {
+            entity.getClass().getMethod("setScale", float.class).invoke(entity, (float) scale);
+        } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException ignored) {
+            // Si la version de Minecraft ne supporte pas setScale (anciennes versions)
+        }
 
         // Follow distance pour l'IA
         try {
@@ -140,12 +149,16 @@ public class BossData {
 
         return entity;
     }
-    
+
     public List<String> getDeathMessages() {
         return deathMessages;
     }
 
     public List<String> getOnDeathCommands() {
         return onDeathCommands;
+    }
+
+    public String getName() {
+        return name;
     }
 }
