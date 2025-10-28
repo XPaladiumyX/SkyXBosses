@@ -94,8 +94,11 @@ public class BossData {
         entity.setCustomNameVisible(true);
         entity.setMaxHealth(health);
         entity.setHealth(health);
-        entity.setPersistent(persistent);
         entity.setGlowing(true);
+
+        if (persistent && isPersistenceAllowed(entity.getType())) {
+            entity.setPersistent(true);
+        }
 
         // Utiliser l'ID du boss comme tag
         entity.addScoreboardTag(id);
@@ -169,7 +172,7 @@ public class BossData {
     public List<String> getOnDeathCommands() {
         return onDeathCommands;
     }
-    
+
     private void applyEntityScale(LivingEntity entity, double scale) {
         try {
             // Méthode Paper moderne (1.21+)
@@ -192,5 +195,12 @@ public class BossData {
         } catch (Exception ex) {
             SkyXBosses.getInstance().getLogger().warning("⚠ Could not apply scale for " + entity.getType() + ": " + ex.getMessage());
         }
+    }
+
+    private boolean isPersistenceAllowed(EntityType type) {
+        return switch (type) {
+            case BREEZE, WARDEN, ENDER_DRAGON -> false;
+            default -> true;
+        };
     }
 }
