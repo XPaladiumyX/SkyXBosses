@@ -4,6 +4,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.java.JavaPlugin;
 import skyxnetwork.skyXBosses.listeners.BossDamageListener;
 import skyxnetwork.skyXBosses.listeners.BossDeathListener;
+import skyxnetwork.skyXBosses.listeners.FireballListener;
 import skyxnetwork.skyXBosses.managers.BossManager;
 import skyxnetwork.skyXBosses.managers.PowerManager;
 import skyxnetwork.skyXBosses.models.BossData;
@@ -27,6 +28,7 @@ public class SkyXBosses extends JavaPlugin {
         getLogger().info("✅ SkyXBosses enabled successfully!");
 
         // Enregistrement des listeners
+        getServer().getPluginManager().registerEvents(new FireballListener(), this);
         getServer().getPluginManager().registerEvents(new BossDamageListener(), this);
         getServer().getPluginManager().registerEvents(new BossDeathListener(), this);
 
