@@ -217,4 +217,42 @@ public class BossData {
             default -> true;
         };
     }
+
+    public void attachBossBarToExisting(LivingEntity entity) {
+        if (!bossbarEnabled) return;
+
+        BossBar bar = Bukkit.createBossBar(name, BarColor.GREEN, BarStyle.SOLID);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (entity.isDead() || !entity.isValid()) {
+                    bar.removeAll();
+                    cancel();
+                    return;
+                }
+
+                double health = entity.getHealth();
+                double maxHealth = entity.getMaxHealth();
+                double progress = health / maxHealth;
+
+                bar.setTitle(ChatColor.translateAlternateColorCodes('&',
+                        name + " &c[" + (int) health + "/" + (int) maxHealth + " HP]"));
+                bar.setProgress(Math.max(0, Math.min(1, progress)));
+
+                if (progress > 0.6) bar.setColor(BarColor.GREEN);
+                else if (progress > 0.3) bar.setColor(BarColor.YELLOW);
+                else bar.setColor(BarColor.RED);
+
+                Bukkit.getOnlinePlayers().forEach(player -> {
+                    if (player.getWorld().equals(entity.getWorld()) &&
+                            player.getLocation().distanceSquared(entity.getLocation()) <= 50 * 50) {
+                        if (!bar.getPlayers().contains(player)) bar.addPlayer(player);
+                    } else {
+                        if (bar.getPlayers().contains(player)) bar.removePlayer(player);
+                    }
+                });
+            }
+        }.runTaskTimer(SkyXBosses.getInstance(), 0, 40);
+    }
 }
