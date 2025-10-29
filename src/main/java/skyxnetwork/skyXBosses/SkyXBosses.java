@@ -1,5 +1,6 @@
 package skyxnetwork.skyXBosses;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.java.JavaPlugin;
 import skyxnetwork.skyXBosses.listeners.BossDamageListener;
@@ -59,6 +60,13 @@ public class SkyXBosses extends JavaPlugin {
 
             return true;
         });
+
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new skyxnetwork.skyXBosses.placeholders.SkyXBossesExpansion(this).register();
+            getLogger().info("✅ Hooked into PlaceholderAPI!");
+        } else {
+            getLogger().warning("⚠ PlaceholderAPI not found, placeholders won't work!");
+        }
 
         // Tab completion
         this.getCommand("spawnboss").setTabCompleter((sender, command, alias, args) -> {

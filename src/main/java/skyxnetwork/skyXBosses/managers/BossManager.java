@@ -20,6 +20,7 @@ public class BossManager {
     private final Map<String, BossData> bosses = new HashMap<>();
     private final PowerExecutor powerExecutor;
     private final List<Integer> scheduledTaskIds = new ArrayList<>();
+    private final Map<String, Integer> remainingTimes = new HashMap<>();
 
     public BossManager(SkyXBosses plugin) {
         this.plugin = plugin;
@@ -67,6 +68,7 @@ public class BossManager {
 
                     // Décrémenter le timer
                     timer--;
+                    remainingTimes.put(boss.getId(), timer);
 
                     if (timer <= 0) {
                         LivingEntity spawned = boss.spawn();
@@ -77,6 +79,7 @@ public class BossManager {
 
                         // Reset le timer
                         timer = cooldownSeconds;
+                        remainingTimes.put(boss.getId(), timer);
                     }
                 }
             }.runTaskTimer(plugin, 20L, 20L).getTaskId(); // Vérifie chaque seconde
@@ -110,5 +113,9 @@ public class BossManager {
 
     public List<String> getAllBossNames() {
         return new ArrayList<>(bosses.keySet());
+    }
+
+    public int getRemainingTime(String bossId) {
+        return remainingTimes.getOrDefault(bossId.toUpperCase(), 0);
     }
 }
