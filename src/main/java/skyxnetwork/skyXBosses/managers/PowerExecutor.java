@@ -113,6 +113,7 @@ public class PowerExecutor {
             case "GROUND_POUND" -> new GroundPoundPower(plugin, boss, data);
             case "LIGHTNING" -> new LightningPower(plugin, boss, data);
             case "SUMMON_MINIONS" -> new SummonMinionsPower(plugin, boss, data);
+            case "CRUSH_GRAB" -> new CrushGrabPower(plugin, boss, data);
             default -> null;
         };
     }

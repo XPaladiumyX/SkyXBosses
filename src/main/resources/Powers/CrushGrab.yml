@@ -1,0 +1,6 @@
+powerType: CRUSH_GRAB
+cooldown: 25
+damage: 4.0
+radius: 10
+sound: minecraft:entity.iron_golem.attack
+particle: minecraft:composter
